@@ -113,7 +113,12 @@ app.post('/api/mark-taken', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
+app.get('/api', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: "MediBox Backend is Running Successfully!" 
+  });
+});
 // --- START SERVER ---
 app.listen(PORT, '0.0.0.0', () => {
     // Use ip.address() to get the local network IP for the mobile app to connect
