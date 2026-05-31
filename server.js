@@ -5,14 +5,14 @@ const ip = require('ip'); // Used for finding the local IP
 require('dotenv').config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- Configuration ---
 app.use(cors());
 app.use(express.json());
 
 // ✅ FIXED: Sahi aur clean MongoDB connection string
-const MONGO_URI = "mongodb+srv://amitbhandari:MediBox2026@cluster0.mfe7rhh.mongodb.net/medibox?retryWrites=true&w=majority&appName=Cluster0";
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected Successfully!'))
