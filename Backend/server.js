@@ -5,17 +5,21 @@ const ip = require('ip'); // Used for finding the local IP
 require('dotenv').config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- Configuration ---
 app.use(cors());
 app.use(express.json());
 
 // IMPORTANT: REPLACE 'YOUR_MONGODB_STRING' with your Atlas connection string
-const MONGO_URI = "mongodb+srv://MediBox:Amit123@cluster0.gsay5pl.mongodb.net/medibox?retryWrites=true&w=majority";
+require("dotenv").config();
+
+const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI;
+
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.log('❌ DB Error:', err));
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log("❌ DB Error:", err));
 
 // --- Data Model (Simplified for Demo) ---
 const UserSchema = new mongoose.Schema({
