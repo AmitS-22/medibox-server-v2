@@ -127,17 +127,6 @@ app.get("/api", (req, res) => {
   });
 });
 
-// Health Check Route
-app.get("/", (req, res) => {
-  res.send("MediBox API is Running 🚀");
-});
-
-app.get("/api", (req, res) => {
-  res.json({
-    success: true,
-    message: "MediBox Backend is Running Successfully!"
-  });
-});
 
 // --- START SERVER ---
 app.listen(PORT, '0.0.0.0', () => {
