@@ -3,8 +3,13 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import LoginScreen from "../screens/LoginScreen";
-import DashboardScreen from "../screens/DashboardScreen";
 import AddMedicineScreen from "../screens/AddMedicineScreen";
+
+
+import TabNavigator from "./TabNavigator";
+
+import ScannerScreen from "../screens/ScannerScreen";
+
 
 const Stack = createNativeStackNavigator();
 
@@ -21,12 +26,15 @@ export default function AppNavigator() {
           name="Login"
           component={LoginScreen}
         />
-
         <Stack.Screen
-          name="Dashboard"
-          component={DashboardScreen}
-        />
+  name="Scanner"
+  component={ScannerScreen}
+/>
 
+       <Stack.Screen
+  name="Dashboard"
+  component={TabNavigator}
+/>
         <Stack.Screen
           name="AddMedicine"
           component={AddMedicineScreen}

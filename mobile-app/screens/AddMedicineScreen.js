@@ -20,87 +20,81 @@ export default function AddMedicineScreen({
   route,
 }) {
 
-  const { user, scannedMedicine } =
-    route.params || {};
+  const {
+    user,
+    scannedMedicine,
+    editMedicine,
+  } = route.params || {};
 
   const [name, setName] = useState("");
-
   const [dose, setDose] = useState("");
-
   const [stock, setStock] = useState("");
-
-  const [type, setType] =
-    useState("Tablet");
-
-  const [hour, setHour] =
-    useState("09");
-
-  const [minute, setMinute] =
-    useState("00");
+  const [type, setType] = useState("Tablet");
+  const [hour, setHour] = useState("09");
+  const [minute, setMinute] = useState("00");
 
   useEffect(() => {
 
-    if (scannedMedicine) {
+    if (editMedicine) {
 
-      setName(
-        scannedMedicine.name || ""
-      );
+      setName(editMedicine.name || "");
+      setDose(editMedicine.dose || "");
+      setType(editMedicine.type || "Tablet");
+      setStock(String(editMedicine.stock || 10));
 
-      setDose(
-        scannedMedicine.dose || ""
-      );
+    } else if (scannedMedicine) {
 
-      setType(
-        scannedMedicine.type ||
-        "Tablet"
-      );
-
-      setStock(
-        String(
-          scannedMedicine.stock || 10
-        )
-      );
+      setName(scannedMedicine.name || "");
+      setDose(scannedMedicine.dose || "");
+      setType(scannedMedicine.type || "Tablet");
+      setStock(String(scannedMedicine.stock || 10));
 
     }
 
-  }, [scannedMedicine]);
+  }, [editMedicine, scannedMedicine]);
 
   const saveMedicine = async () => {
 
     if (!name.trim()) {
-
-      Alert.alert(
-        "Error",
-        "Enter Medicine Name"
-      );
-
+      Alert.alert("Error", "Enter Medicine Name");
       return;
-
     }
 
     if (!dose.trim()) {
-
-      Alert.alert(
-        "Error",
-        "Enter Dose"
-      );
-
+      Alert.alert("Error", "Enter Dose");
       return;
-
     }
 
     try {
 
-      const res = await api.post(
-        "/add-medicine",
-        {
-          userId: user.mobile,
-          name,
-          dose,
-          type,
-          stock: Number(stock || 10),
-        }
-      );
+      let res;
+
+      if (editMedicine) {
+
+        res = await api.put(
+          `/update-medicine/${editMedicine._id}`,
+          {
+            name,
+            dose,
+            type,
+            stock: Number(stock || 10),
+          }
+        );
+
+      } else {
+
+        res = await api.post(
+          "/add-medicine",
+          {
+            userId: user.mobile,
+            name,
+            dose,
+            type,
+            stock: Number(stock || 10),
+          }
+        );
+
+      }
 
       if (res.data.success) {
 
@@ -113,12 +107,13 @@ export default function AddMedicineScreen({
 
         Alert.alert(
           "Success",
-          "Medicine Added Successfully",
+          editMedicine
+            ? "Medicine Updated Successfully"
+            : "Medicine Added Successfully",
           [
             {
               text: "OK",
-              onPress: () =>
-                navigation.goBack(),
+              onPress: () => navigation.goBack(),
             },
           ]
         );
@@ -129,6 +124,7 @@ export default function AddMedicineScreen({
 
       Alert.alert(
         "Error",
+        err.response?.data?.message ||
         "Unable to Save Medicine"
       );
 
@@ -142,8 +138,11 @@ export default function AddMedicineScreen({
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-              <Text style={styles.heading}>
-        Add Medicine
+
+      <Text style={styles.heading}>
+        {editMedicine
+          ? "Edit Medicine"
+          : "Add Medicine"}
       </Text>
 
       <Text style={styles.subHeading}>
@@ -159,7 +158,7 @@ export default function AddMedicineScreen({
 
       <TextInput
         style={styles.input}
-        placeholder="Dose (e.g. 500mg)"
+        placeholder="Dose (500mg)"
         value={dose}
         onChangeText={setDose}
       />
@@ -171,8 +170,7 @@ export default function AddMedicineScreen({
         value={stock}
         onChangeText={setStock}
       />
-
-      <Text style={styles.label}>
+            <Text style={styles.label}>
         Reminder Time
       </Text>
 
@@ -187,9 +185,7 @@ export default function AddMedicineScreen({
           placeholder="HH"
         />
 
-        <Text style={styles.timeColon}>
-          :
-        </Text>
+        <Text style={styles.timeColon}>:</Text>
 
         <TextInput
           style={styles.timeInput}
@@ -214,12 +210,9 @@ export default function AddMedicineScreen({
             key={item}
             style={[
               styles.typeButton,
-              type === item &&
-                styles.activeType,
+              type === item && styles.activeType,
             ]}
-            onPress={() =>
-              setType(item)
-            }
+            onPress={() => setType(item)}
           >
 
             <Ionicons
@@ -287,16 +280,16 @@ export default function AddMedicineScreen({
         />
 
         <Text style={styles.saveText}>
-          Save Medicine
+          {editMedicine
+            ? "Update Medicine"
+            : "Save Medicine"}
         </Text>
 
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.cancelBtn}
-        onPress={() =>
-          navigation.goBack()
-        }
+        onPress={() => navigation.goBack()}
       >
 
         <Text style={styles.cancelText}>
@@ -313,139 +306,139 @@ export default function AddMedicineScreen({
 
 const styles = StyleSheet.create({
 
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F7FB",
-    padding: 20,
+  container:{
+    flex:1,
+    backgroundColor:"#F5F7FB",
+    padding:20,
   },
 
-  heading: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: "#222",
-    marginTop: 10,
+  heading:{
+    fontSize:30,
+    fontWeight:"bold",
+    color:"#222",
+    marginTop:10,
   },
 
-  subHeading: {
-    color: "#777",
-    marginBottom: 25,
+  subHeading:{
+    color:"#777",
+    marginBottom:25,
   },
 
-  input: {
-    backgroundColor: "#FFF",
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 15,
-    fontSize: 16,
-    elevation: 2,
+  input:{
+    backgroundColor:"#FFF",
+    padding:16,
+    borderRadius:14,
+    marginBottom:15,
+    fontSize:16,
+    elevation:2,
   },
 
-  label: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-  },
-    row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 25,
+  label:{
+    fontSize:17,
+    fontWeight:"bold",
+    color:"#333",
+    marginBottom:12,
   },
 
-  typeButton: {
-    flex: 1,
-    marginHorizontal: 5,
-    paddingVertical: 15,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: "#00897B",
-    alignItems: "center",
+  row:{
+    flexDirection:"row",
+    justifyContent:"space-between",
+    marginBottom:25,
   },
 
-  activeType: {
-    backgroundColor: "#00897B",
+  typeButton:{
+    flex:1,
+    marginHorizontal:5,
+    paddingVertical:15,
+    borderRadius:15,
+    borderWidth:1,
+    borderColor:"#00897B",
+    alignItems:"center",
   },
 
-  typeText: {
-    color: "#00897B",
-    marginTop: 8,
-    fontWeight: "bold",
+  activeType:{
+    backgroundColor:"#00897B",
   },
 
-  activeTypeText: {
-    color: "#FFF",
-    marginTop: 8,
-    fontWeight: "bold",
+  typeText:{
+    color:"#00897B",
+    marginTop:8,
+    fontWeight:"bold",
   },
 
-  timeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 25,
+  activeTypeText:{
+    color:"#FFF",
+    marginTop:8,
+    fontWeight:"bold",
   },
 
-  timeInput: {
-    backgroundColor: "#FFF",
-    width: 80,
-    height: 55,
-    borderRadius: 12,
-    textAlign: "center",
-    fontSize: 20,
-    fontWeight: "bold",
-    elevation: 2,
+  timeRow:{
+    flexDirection:"row",
+    justifyContent:"center",
+    alignItems:"center",
+    marginBottom:25,
   },
 
-  timeColon: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginHorizontal: 15,
-    color: "#333",
+  timeInput:{
+    backgroundColor:"#FFF",
+    width:80,
+    height:55,
+    borderRadius:12,
+    textAlign:"center",
+    fontSize:20,
+    fontWeight:"bold",
+    elevation:2,
   },
 
-  scanBtn: {
-    backgroundColor: "#1565C0",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 15,
+  timeColon:{
+    fontSize:28,
+    fontWeight:"bold",
+    marginHorizontal:15,
   },
 
-  scanText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
+  scanBtn:{
+    backgroundColor:"#1565C0",
+    flexDirection:"row",
+    justifyContent:"center",
+    alignItems:"center",
+    padding:16,
+    borderRadius:14,
+    marginBottom:15,
   },
 
-  saveBtn: {
-    backgroundColor: "#00897B",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 18,
-    borderRadius: 14,
-    marginBottom: 15,
+  scanText:{
+    color:"#FFF",
+    marginLeft:10,
+    fontWeight:"bold",
+    fontSize:16,
   },
 
-  saveText: {
-    color: "#FFF",
-    fontWeight: "bold",
-    fontSize: 17,
-    marginLeft: 10,
+  saveBtn:{
+    backgroundColor:"#00897B",
+    flexDirection:"row",
+    justifyContent:"center",
+    alignItems:"center",
+    padding:18,
+    borderRadius:14,
+    marginBottom:15,
   },
 
-  cancelBtn: {
-    alignItems: "center",
-    paddingVertical: 15,
+  saveText:{
+    color:"#FFF",
+    marginLeft:10,
+    fontWeight:"bold",
+    fontSize:17,
   },
 
-  cancelText: {
-    color: "#E53935",
-    fontWeight: "bold",
-    fontSize: 17,
+  cancelBtn:{
+    alignItems:"center",
+    paddingVertical:15,
+  },
+
+  cancelText:{
+    color:"#E53935",
+    fontWeight:"bold",
+    fontSize:17,
   },
 
 });

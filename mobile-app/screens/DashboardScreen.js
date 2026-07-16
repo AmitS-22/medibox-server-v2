@@ -19,6 +19,7 @@ export default function DashboardScreen({
 }) {
 
   const { user } = route.params;
+  
 
   const [medicines, setMedicines] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -163,6 +164,22 @@ export default function DashboardScreen({
             size={22}
             color="#FFF"
           />
+        </TouchableOpacity>
+
+                <TouchableOpacity
+        style={styles.editBtn}
+        onPress={() =>
+            navigation.navigate("AddMedicine", {
+            user,
+            editMedicine: item,
+            })
+        }
+        >
+        <Ionicons
+            name="create"
+            size={20}
+            color="#FFF"
+        />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -423,5 +440,14 @@ const styles = StyleSheet.create({
     color: "#888",
     textAlign: "center",
   },
+  editBtn:{
+  backgroundColor:"#FB8C00",
+  width:46,
+  height:46,
+  borderRadius:23,
+  justifyContent:"center",
+  alignItems:"center",
+  marginBottom:10,
+},
 
 });

@@ -4,16 +4,17 @@ import {
   Text,
   StyleSheet,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 
 import {
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
-import React, { useState, useEffect } from "react";
 
 export default function ScannerScreen({
   navigation,
+  route,
 }) {
 
   const [permission, requestPermission] =
@@ -22,23 +23,6 @@ export default function ScannerScreen({
   const [scanned, setScanned] =
     useState(false);
 
-    useEffect(() => {
-
-  if (scannedMedicine) {
-
-    setName(scannedMedicine.name || "");
-
-    setDose(scannedMedicine.dose || "");
-
-    setType(scannedMedicine.type || "Tablet");
-
-    setStock(
-      String(scannedMedicine.stock || 10)
-    );
-
-  }
-
-}, [scannedMedicine]);
 
   if (!permission) return <View />;
 
@@ -76,12 +60,12 @@ export default function ScannerScreen({
             onPress: () => {
 
               navigation.navigate(
-                "AddMedicine",
-                {
-                  scannedMedicine:
-                    medicine,
-                }
-              );
+  "AddMedicine",
+  {
+    user: route.params?.user,
+    scannedMedicine: medicine,
+  }
+);
 
             },
           },
