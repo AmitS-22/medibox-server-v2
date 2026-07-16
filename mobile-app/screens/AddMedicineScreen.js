@@ -1,68 +1,153 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  ScrollView,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
-  View,
+  ScrollView,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
 import api from "../services/api";
+import {
+  scheduleMedicineReminder,
+} from "../services/notification";
 
-export default function AddMedicineScreen({ navigation, route }) {
-  const { user } = route.params;
+export default function AddMedicineScreen({
+  navigation,
+  route,
+}) {
+
+  const { user, scannedMedicine } =
+    route.params || {};
 
   const [name, setName] = useState("");
+
   const [dose, setDose] = useState("");
+
   const [stock, setStock] = useState("");
-  const [type, setType] = useState("Tablet");
+
+  const [type, setType] =
+    useState("Tablet");
+
+  const [hour, setHour] =
+    useState("09");
+
+  const [minute, setMinute] =
+    useState("00");
+
+  useEffect(() => {
+
+    if (scannedMedicine) {
+
+      setName(
+        scannedMedicine.name || ""
+      );
+
+      setDose(
+        scannedMedicine.dose || ""
+      );
+
+      setType(
+        scannedMedicine.type ||
+        "Tablet"
+      );
+
+      setStock(
+        String(
+          scannedMedicine.stock || 10
+        )
+      );
+
+    }
+
+  }, [scannedMedicine]);
 
   const saveMedicine = async () => {
+
     if (!name.trim()) {
-      Alert.alert("Error", "Enter medicine name");
+
+      Alert.alert(
+        "Error",
+        "Enter Medicine Name"
+      );
+
       return;
+
+    }
+
+    if (!dose.trim()) {
+
+      Alert.alert(
+        "Error",
+        "Enter Dose"
+      );
+
+      return;
+
     }
 
     try {
-      const res = await api.post("/add-medicine", {
-        userId: user.mobile,
-        name,
-        dose,
-        type,
-        stock: Number(stock || 10),
-      });
+
+      const res = await api.post(
+        "/add-medicine",
+        {
+          userId: user.mobile,
+          name,
+          dose,
+          type,
+          stock: Number(stock || 10),
+        }
+      );
 
       if (res.data.success) {
+
+        await scheduleMedicineReminder(
+          "💊 Medicine Reminder",
+          `Time to take ${name}`,
+          Number(hour),
+          Number(minute)
+        );
+
         Alert.alert(
           "Success",
           "Medicine Added Successfully",
           [
             {
               text: "OK",
-              onPress: () => navigation.goBack(),
+              onPress: () =>
+                navigation.goBack(),
             },
           ]
         );
+
       }
+
     } catch (err) {
-      console.log(err);
 
       Alert.alert(
         "Error",
-        "Unable to save medicine"
+        "Unable to Save Medicine"
       );
+
     }
+
   };
 
   return (
+
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.heading}>
+              <Text style={styles.heading}>
         Add Medicine
+      </Text>
+
+      <Text style={styles.subHeading}>
+        Fill medicine details
       </Text>
 
       <TextInput
@@ -74,7 +159,7 @@ export default function AddMedicineScreen({ navigation, route }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Dose (500mg)"
+        placeholder="Dose (e.g. 500mg)"
         value={dose}
         onChangeText={setDose}
       />
@@ -88,133 +173,279 @@ export default function AddMedicineScreen({ navigation, route }) {
       />
 
       <Text style={styles.label}>
+        Reminder Time
+      </Text>
+
+      <View style={styles.timeRow}>
+
+        <TextInput
+          style={styles.timeInput}
+          keyboardType="numeric"
+          maxLength={2}
+          value={hour}
+          onChangeText={setHour}
+          placeholder="HH"
+        />
+
+        <Text style={styles.timeColon}>
+          :
+        </Text>
+
+        <TextInput
+          style={styles.timeInput}
+          keyboardType="numeric"
+          maxLength={2}
+          value={minute}
+          onChangeText={setMinute}
+          placeholder="MM"
+        />
+
+      </View>
+
+      <Text style={styles.label}>
         Medicine Type
       </Text>
 
       <View style={styles.row}>
+
         {["Tablet", "Capsule", "Syrup"].map((item) => (
+
           <TouchableOpacity
             key={item}
             style={[
-              styles.type,
-              type === item && styles.active,
+              styles.typeButton,
+              type === item &&
+                styles.activeType,
             ]}
-            onPress={() => setType(item)}
+            onPress={() =>
+              setType(item)
+            }
           >
+
+            <Ionicons
+              name={
+                item === "Tablet"
+                  ? "medkit"
+                  : item === "Capsule"
+                  ? "fitness"
+                  : "flask"
+              }
+              size={22}
+              color={
+                type === item
+                  ? "#FFF"
+                  : "#00897B"
+              }
+            />
+
             <Text
               style={
                 type === item
-                  ? styles.activeText
-                  : styles.normalText
+                  ? styles.activeTypeText
+                  : styles.typeText
               }
             >
               {item}
             </Text>
+
           </TouchableOpacity>
+
         ))}
+
       </View>
 
       <TouchableOpacity
+        style={styles.scanBtn}
+        onPress={() =>
+          navigation.navigate("Scanner", {
+            user,
+          })
+        }
+      >
+
+        <Ionicons
+          name="qr-code"
+          size={22}
+          color="#FFF"
+        />
+
+        <Text style={styles.scanText}>
+          Scan QR Code
+        </Text>
+
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.saveBtn}
-        activeOpacity={0.8}
         onPress={saveMedicine}
       >
-        <Text style={styles.btnText}>
-          SAVE MEDICINE
+
+        <Ionicons
+          name="save"
+          size={22}
+          color="#FFF"
+        />
+
+        <Text style={styles.saveText}>
+          Save Medicine
         </Text>
+
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.cancelBtn}
-        onPress={() => navigation.goBack()}
+        onPress={() =>
+          navigation.goBack()
+        }
       >
+
         <Text style={styles.cancelText}>
           Cancel
         </Text>
+
       </TouchableOpacity>
+
     </ScrollView>
+
   );
+
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
+    backgroundColor: "#F5F7FB",
     padding: 20,
-    backgroundColor: "#F4F7FB",
   },
 
   heading: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "bold",
+    color: "#222",
+    marginTop: 10,
+  },
+
+  subHeading: {
+    color: "#777",
     marginBottom: 25,
   },
 
   input: {
     backgroundColor: "#FFF",
-    padding: 15,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 14,
     marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#DDD",
+    fontSize: 16,
+    elevation: 2,
   },
 
   label: {
+    fontSize: 17,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#333",
+    marginBottom: 12,
   },
-
-  row: {
+    row: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 25,
   },
 
-  type: {
+  typeButton: {
     flex: 1,
-    padding: 15,
     marginHorizontal: 5,
+    paddingVertical: 15,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: "#00897B",
-    borderRadius: 10,
     alignItems: "center",
   },
 
-  active: {
+  activeType: {
     backgroundColor: "#00897B",
   },
 
-  normalText: {
+  typeText: {
     color: "#00897B",
+    marginTop: 8,
     fontWeight: "bold",
   },
 
-  activeText: {
+  activeTypeText: {
     color: "#FFF",
+    marginTop: 8,
     fontWeight: "bold",
+  },
+
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 25,
+  },
+
+  timeInput: {
+    backgroundColor: "#FFF",
+    width: 80,
+    height: 55,
+    borderRadius: 12,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    elevation: 2,
+  },
+
+  timeColon: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginHorizontal: 15,
+    color: "#333",
+  },
+
+  scanBtn: {
+    backgroundColor: "#1565C0",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 15,
+  },
+
+  scanText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 10,
   },
 
   saveBtn: {
     backgroundColor: "#00897B",
-    padding: 18,
-    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
+    padding: 18,
+    borderRadius: 14,
     marginBottom: 15,
   },
 
-  btnText: {
+  saveText: {
     color: "#FFF",
     fontWeight: "bold",
     fontSize: 17,
+    marginLeft: 10,
   },
 
   cancelBtn: {
     alignItems: "center",
-    padding: 12,
+    paddingVertical: 15,
   },
 
   cancelText: {
-    color: "#00897B",
+    color: "#E53935",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 17,
   },
+
 });

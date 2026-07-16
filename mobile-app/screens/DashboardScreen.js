@@ -6,17 +6,23 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  RefreshControl,
+  TextInput,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
 import api from "../services/api";
 
 export default function DashboardScreen({
   navigation,
   route,
 }) {
-    const { user } = route.params;
+
+  const { user } = route.params;
 
   const [medicines, setMedicines] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
 
   const loadMedicines = async () => {
 
@@ -27,9 +33,7 @@ export default function DashboardScreen({
       );
 
       if (res.data.success) {
-
         setMedicines(res.data.meds);
-
       }
 
     } catch (err) {
@@ -41,129 +45,137 @@ export default function DashboardScreen({
   };
 
   useEffect(() => {
-  const unsubscribe = navigation.addListener("focus", () => {
-    loadMedicines();
-  });
 
-  return unsubscribe;
-}, [navigation]);
+    const unsubscribe = navigation.addListener(
+      "focus",
+      loadMedicines
+    );
+
+    return unsubscribe;
+
+  }, []);
+
+  const onRefresh = async () => {
+
+    setRefreshing(true);
+
+    await loadMedicines();
+
+    setRefreshing(false);
+
+  };
 
   const deleteMedicine = (id) => {
 
     Alert.alert(
-
-      "Delete",
-
-      "Delete this medicine?",
-
+      "Delete Medicine",
+      "Are you sure?",
       [
-
         {
-          text:"Cancel",
+          text: "Cancel",
         },
-
         {
-
-          text:"Delete",
-
-          style:"destructive",
-
-          onPress:async()=>{
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
 
             await api.delete(
-
               `/delete-medicine/${id}`
-
             );
 
             loadMedicines();
 
-          }
-
-        }
-
+          },
+        },
       ]
-
     );
 
   };
 
-  const markTaken = async(id)=>{
+  const markTaken = async (id) => {
 
-    await api.post(
-
-      "/mark-taken",
-
-      {id}
-
-    );
+    await api.post("/mark-taken", {
+      id,
+    });
 
     loadMedicines();
 
   };
 
-  const renderItem = ({item})=>(
+  const filteredMedicines =
+    medicines.filter((item) =>
+      item.name
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    );
+
+  const renderItem = ({ item }) => (
 
     <View style={styles.card}>
 
-      <View>
+      <View style={{ flex: 1 }}>
 
         <Text style={styles.title}>
           {item.name}
         </Text>
 
-        <Text>
-          {item.dose}
+        <Text style={styles.info}>
+          💊 {item.dose}
         </Text>
 
-        <Text>
-          {item.type}
+        <Text style={styles.info}>
+          📦 {item.type}
         </Text>
 
         <Text
           style={{
-                    color:
-        item.stock <= 5
-        ? "#E53935"
-        : "#43A047",
-
-            fontWeight:"bold",
+            color:
+              item.stock <= 5
+                ? "#E53935"
+                : "#43A047",
+            fontWeight: "bold",
+            marginTop: 5,
           }}
         >
-          Stock :
-          {item.stock}
+          Stock : {item.stock}
         </Text>
+
+        {item.stock <= 5 && (
+
+          <Text style={styles.lowStock}>
+            ⚠ Low Stock
+          </Text>
+
+        )}
 
       </View>
 
       <View>
 
         <TouchableOpacity
-
           style={styles.doneBtn}
-
-          onPress={()=>markTaken(item._id)}
-
+          onPress={() =>
+            markTaken(item._id)
+          }
         >
-
-          <Text style={styles.white}>
-            ✓
-          </Text>
-
+          <Ionicons
+            name="checkmark"
+            size={22}
+            color="#FFF"
+          />
         </TouchableOpacity>
 
         <TouchableOpacity
-
           style={styles.deleteBtn}
-
-          onPress={()=>deleteMedicine(item._id)}
-
+          onPress={() =>
+            deleteMedicine(item._id)
+          }
         >
-
-          <Text style={styles.white}>
-            🗑
-          </Text>
-
+          <Ionicons
+            name="trash"
+            size={20}
+            color="#FFF"
+          />
         </TouchableOpacity>
 
       </View>
@@ -172,185 +184,244 @@ export default function DashboardScreen({
 
   );
 
-  return(
+  return (
 
     <View style={styles.container}>
 
-      <Text style={styles.heading}>
-        Welcome,
-        {" "}
-        {user.name}
-      </Text>
+      <View style={styles.header}>
+
+        <View>
+
+          <Text style={styles.heading}>
+            Welcome 👋
+          </Text>
+
+          <Text style={styles.userName}>
+            {user.name}
+          </Text>
+
+        </View>
+
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() =>
+            navigation.replace("Login")
+          }
+        >
+          <Ionicons
+            name="log-out"
+            size={24}
+            color="#FFF"
+          />
+        </TouchableOpacity>
+
+      </View>
+
       <View style={styles.summaryCard}>
-  <Text style={styles.summaryTitle}>
-    Total Medicines
-  </Text>
 
-  <Text style={styles.summaryValue}>
-    {medicines.length}
-  </Text>
-</View>
-<Text style={styles.heading}>
-  Welcome {user.name}
-</Text>
+        <Text style={styles.summaryTitle}>
+          Total Medicines
+        </Text>
 
-      <FlatList
+        <Text style={styles.summaryValue}>
+          {medicines.length}
+        </Text>
 
-        data={medicines}
+      </View>
 
-        keyExtractor={(item)=>item._id}
-
+      <TextInput
+        placeholder="Search Medicine..."
+        style={styles.search}
+        value={search}
+        onChangeText={setSearch}
+      />
+            <FlatList
+        data={filteredMedicines}
+        keyExtractor={(item) => item._id}
         renderItem={renderItem}
-
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="medkit-outline"
+              size={70}
+              color="#BDBDBD"
+            />
+            <Text style={styles.emptyTitle}>
+              No Medicines Found
+            </Text>
+            <Text style={styles.emptySubTitle}>
+              Tap + button to add your first medicine
+            </Text>
+          </View>
+        )}
+        contentContainerStyle={{
+          paddingBottom: 100,
+        }}
       />
 
-     <TouchableOpacity
-  style={styles.fab}
-  onPress={() =>
-    navigation.navigate("AddMedicine", {
-      user,
-    })
-  }
->
-  <Text style={styles.plus}>+</Text>
-</TouchableOpacity>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() =>
+          navigation.navigate("AddMedicine", {
+            user,
+          })
+        }
+      >
+        <Ionicons
+          name="add"
+          size={34}
+          color="#FFF"
+        />
+      </TouchableOpacity>
 
     </View>
-
   );
-
 }
 
-const styles=StyleSheet.create({
+const styles = StyleSheet.create({
 
-container:{
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F7FB",
+    padding: 20,
+  },
 
-flex:1,
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
 
-backgroundColor:"#F4F7FB",
+  heading: {
+    fontSize: 16,
+    color: "#777",
+  },
 
-padding:20,
+  userName: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#222",
+  },
 
-},
+  logoutBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#E53935",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-heading:{
+  summaryCard: {
+    backgroundColor: "#00897B",
+    padding: 22,
+    borderRadius: 20,
+    marginBottom: 20,
+  },
 
-fontSize:24,
+  summaryTitle: {
+    color: "#FFF",
+    fontSize: 16,
+  },
 
-fontWeight:"bold",
+  summaryValue: {
+    color: "#FFF",
+    fontSize: 36,
+    fontWeight: "bold",
+    marginTop: 5,
+  },
 
-marginBottom:20,
+  search: {
+    backgroundColor: "#FFF",
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 20,
+    fontSize: 16,
+    elevation: 2,
+  },
 
-},
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    elevation: 3,
+  },
 
-card:{
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#222",
+  },
 
-backgroundColor:"#FFF",
+  info: {
+    marginTop: 5,
+    color: "#666",
+  },
 
-padding:18,
+  lowStock: {
+    marginTop: 5,
+    color: "#E53935",
+    fontWeight: "bold",
+  },
 
-borderRadius:15,
+  doneBtn: {
+    backgroundColor: "#00A86B",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
 
-marginBottom:15,
+  deleteBtn: {
+    backgroundColor: "#E53935",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-flexDirection:"row",
+  fab: {
+    position: "absolute",
+    right: 25,
+    bottom: 25,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "#00897B",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+  },
 
-justifyContent:"space-between",
+  emptyContainer: {
+    alignItems: "center",
+    marginTop: 90,
+  },
 
-alignItems:"center",
+  emptyTitle: {
+    marginTop: 15,
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#555",
+  },
 
-elevation:4,
-
-},
-
-title:{
-
-fontWeight:"bold",
-
-fontSize:18,
-
-marginBottom:4,
-
-},
-
-doneBtn:{
-
-backgroundColor:"#00A86B",
-
-padding:12,
-
-borderRadius:12,
-
-marginBottom:10,
-
-},
-
-deleteBtn:{
-
-backgroundColor:"#D32F2F",
-
-padding:12,
-
-borderRadius:12,
-
-},
-
-white:{
-
-color:"#FFF",
-
-fontWeight:"bold",
-
-},
-
-fab:{
-
-position:"absolute",
-
-right:25,
-
-bottom:25,
-
-width:65,
-
-height:65,
-
-borderRadius:40,
-
-backgroundColor:"#00897B",
-
-justifyContent:"center",
-
-alignItems:"center",
-
-elevation:6,
-
-},
-
-plus:{
-
-fontSize:36,
-
-color:"#FFF",
-
-},
-
-summaryCard: {
-  backgroundColor: "#00897B",
-  padding: 20,
-  borderRadius: 16,
-  marginBottom: 20,
-},
-
-summaryTitle: {
-  color: "#FFF",
-  fontSize: 16,
-},
-
-summaryValue: {
-  color: "#FFF",
-  fontSize: 32,
-  fontWeight: "bold",
-},
+  emptySubTitle: {
+    marginTop: 8,
+    color: "#888",
+    textAlign: "center",
+  },
 
 });
