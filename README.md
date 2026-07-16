@@ -92,19 +92,7 @@ npx expo start
 
 ---
 
-## 📸 Screenshots
 
-> Add your application screenshots here.
-
-| Login | Dashboard |
-|--------|-----------|
-| Screenshot | Screenshot |
-
-| Medicine List | Add Medicine |
-|---------------|--------------|
-| Screenshot | Screenshot |
-
----
 
 ## 🔮 Future Improvements
 
